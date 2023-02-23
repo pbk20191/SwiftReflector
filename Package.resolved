@@ -1,0 +1,14 @@
+{
+  "pins" : [
+    {
+      "identity" : "supermirror",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/broadwaylamb/SuperMirror.git",
+      "state" : {
+        "branch" : "master",
+        "revision" : "d40f909fa5c592de5571ea8bef118c149512efaf"
+      }
+    }
+  ],
+  "version" : 2
+}
