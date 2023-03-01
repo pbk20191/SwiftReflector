@@ -1,3 +1,4 @@
 # SwiftReflector
 
-A description of this package.
+Reflection Package to drill down implementation of Apple private API.
+
