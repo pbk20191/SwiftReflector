@@ -18,6 +18,19 @@ public struct ObjcMethodRepresenter {
         self.pointer = pointer
     }
     
+    @inlinable
+    public init?(instanceType:AnyClass, selector:Selector) {
+        guard let pointer = class_getInstanceMethod(instanceType, selector) else { return nil }
+        self.pointer = pointer
+        self.owner = instanceType
+    }
+    
+    @inlinable
+    public init?(classType:AnyClass, selector:Selector) {
+        guard let pointer = class_getClassMethod(classType, selector) else { return nil }
+        self.pointer = pointer
+        self.owner = classType
+    }
     
 }
 
@@ -46,6 +59,30 @@ ObjcMethodRepresenter(owner: \(owner), selector: \(selector), name: \(name), enc
 
 public extension ObjcMethodRepresenter {
     
+    /// `NSMethodSignature *methodSignature = [owner methodSignatureForSelector: selector]`
+    var classMethodSignature:ObjcMethodSignature? {
+        guard isClass else { return nil }
+        guard let nsType = owner as? NSObject.Type else { return nil }
+        let targetSelector = NSSelectorFromString("methodSignatureForSelector:")
+        let signature = (@convention(c)(NSObject, Selector, Selector) -> Any).self
+        let method = unsafeBitCast(nsType.method(for: targetSelector), to: signature)
+        guard let nsMethodSignature = method((owner as AnyObject) as! NSObject, targetSelector, selector) as? NSObject else { return nil }
+        return ObjcMethodSignature(nsMethodSignature: nsMethodSignature, owner: self)
+        
+    }
+    
+    /// `NSMethodSignature *methodSignature = [owner instanceMethodSignatureForSelector: selector]`
+    var instanceMethodSignature:ObjcMethodSignature? {
+        guard isInstance else { return nil }
+        guard let nsType = owner as? NSObject.Type else { return nil }
+        let targetSelector = NSSelectorFromString("instanceMethodSignatureForSelector:")
+        let signature = (@convention(c)(NSObject, Selector, Selector) -> Any).self
+        let method = unsafeBitCast(nsType.method(for: targetSelector), to: signature)
+        guard let nsMethodSignature = method((owner as AnyObject) as! NSObject, targetSelector, selector) as? NSObject else { return nil }
+        return ObjcMethodSignature(nsMethodSignature: nsMethodSignature, owner: self)
+    }
+    
+
     @inlinable
     var selector:Selector {
         method_getName(pointer)
@@ -84,7 +121,9 @@ public extension ObjcMethodRepresenter {
     
     @inlinable
     var returnType:String {
-        String(cString: method_copyReturnType(pointer))
+        let ref = method_copyReturnType(pointer)
+        defer { free(ref) }
+        return String(cString: ref)
     }
 
     @inlinable
